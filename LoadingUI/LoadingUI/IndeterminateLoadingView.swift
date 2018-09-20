@@ -8,11 +8,25 @@
 
 import Foundation
 
-class IndeterminateLoadingView: UIView {
+class IndeterminateLoadingView: UIView, CAAnimationDelegate {
     
     // MARK: - Properties
     
     private(set) var isAnimating = false
+    
+    public var loadingColor: UIColor = .black {
+        didSet {
+            shapeLayer.strokeColor = loadingColor.cgColor
+        }
+    }
+    
+    public var thickness: CGFloat = 10.0 {
+        didSet {
+            shapeLayer.lineWidth = thickness
+            shapeLayer.lineDashPattern = [NSNumber(value: Double(thickness*2.0))]
+            setNeedsLayout()
+        }
+    }
     
     private let shapeLayer = CAShapeLayer()
     private let duration = 1.0
@@ -45,22 +59,37 @@ class IndeterminateLoadingView: UIView {
     
     // MARK: - Private
     
-    private func setupShapeLayer() {
-        let thickness: CGFloat = 10.0
+    override func layoutSubviews() {
+        super.layoutSubviews()
         
         shapeLayer.frame = layer.bounds
-        shapeLayer.strokeColor = UIColor.black.cgColor
-        shapeLayer.fillColor = UIColor.clear.cgColor
-        shapeLayer.lineWidth = thickness
-        shapeLayer.strokeStart = 0.0
-        shapeLayer.strokeEnd = 0.0
-        layer.addSublayer(shapeLayer)
         
-        let radius = min(bounds.width, bounds.height) / 2.0 - thickness/2.0
-        let rect = CGRect(x: bounds.midX - radius/2.0, y: bounds.midY - radius/2.0, width: radius, height: radius)
+        let radius = min(bounds.width, bounds.height)/2.0 - thickness/2.0
+        let rect = CGRect(x: bounds.midX - radius, y: bounds.midY - radius, width: radius * 2.0, height: radius * 2.0)
         let path = UIBezierPath(ovalIn: rect)
         
         shapeLayer.path = path.cgPath
+    }
+    
+    private func setupShapeLayer() {
+        
+//        shapeLayer.frame = layer.bounds
+        shapeLayer.strokeColor = loadingColor.cgColor
+        shapeLayer.fillColor = UIColor.clear.cgColor
+        shapeLayer.lineWidth = thickness
+        shapeLayer.lineCap = .round
+        shapeLayer.strokeStart = 0.0
+        shapeLayer.strokeEnd = 0.0
+        shapeLayer.lineDashPattern = [NSNumber(value: Double(thickness*2.0))]
+        layer.addSublayer(shapeLayer)
+        
+//        let radius = min(bounds.width, bounds.height)/2.0 - thickness/2.0
+//        let rect = CGRect(x: bounds.midX - radius, y: bounds.midY - radius, width: radius * 2.0, height: radius * 2.0)
+//        let path = UIBezierPath(ovalIn: rect)
+//
+//        shapeLayer.path = path.cgPath
+        
+        setNeedsLayout()
     }
     
     private func startAnimation() {
@@ -75,7 +104,7 @@ class IndeterminateLoadingView: UIView {
         animation.fromValue = 0.0
         animation.toValue = 1.0
         animation.duration = duration
-        animation.delegate = self as? CAAnimationDelegate
+        animation.delegate = self
         animation.isRemovedOnCompletion = false
         animation.timingFunction = CAMediaTimingFunction(name: timing)
         shapeLayer.add(animation, forKey: keyPath)
@@ -91,15 +120,21 @@ class IndeterminateLoadingView: UIView {
         }
         
         if let anim = anim as? CABasicAnimation, anim.keyPath == "strokeEnd" {
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
             shapeLayer.strokeStart = 0.0
             shapeLayer.strokeEnd = 1.0
+            CATransaction.commit()
             shapeLayer.removeAllAnimations()
             startAnimation(for: "strokeStart", timing: .easeOut)
         }
         
         if let anim = anim as? CABasicAnimation, anim.keyPath == "strokeStart" {
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
             shapeLayer.strokeStart = 0.0
             shapeLayer.strokeEnd = 0.0
+            CATransaction.commit()
             shapeLayer.removeAllAnimations()
             startAnimation(for: "strokeEnd", timing: .easeIn)
         }

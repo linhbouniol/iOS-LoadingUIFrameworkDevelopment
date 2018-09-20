@@ -11,11 +11,16 @@ import LoadingUI
 
 class ViewController: UIViewController {
 
-    let loadingVC = LoadingViewController()
+//    let loadingVC = LoadingViewController()
     
     @IBAction func showLoadingVC(_ sender: Any) {
         // test if loading view controller works
-//        let loadingVC = LoadingViewController()
+        let loadingVC = LoadingViewController()
+        
+        loadingVC.loadingColor = .red
+        loadingVC.loadingSize = 100
+        loadingVC.loadingThickness = 2
+        
         present(loadingVC, animated: true, completion: nil)
     }
     
